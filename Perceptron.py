@@ -65,7 +65,8 @@ def evaluate_algorithm(dataset, algorithm, n_folds, *args):
 			row_copy = list(row)
 			test_set.append(row_copy)
 			row_copy[-1] = None
-		predicted = algorithm(train_set, test_set, *args)
+                # perceptron_sgd or perceptron_bgd 
+		predicted = algorithm(train_set, test_set, fold, *args)
 		actual = [row[-1] for row in fold]
 		accuracy = accuracy_metric(actual, predicted)
 		scores.append(accuracy)
@@ -89,7 +90,7 @@ def get_prediction_accuracy(train, weights):
     return accuracy
 
 # Estimate Perceptron weights using stochastic gradient descent
-def train_weights_sgd(train, l_rate, n_epoch):
+def train_weights_sgd(train, fold_test, l_rate, n_epoch):
         accuracy=[]
 	weights = [0.0 for i in range(len(train[0]))]
 	for epoch in range(n_epoch):
@@ -101,12 +102,12 @@ def train_weights_sgd(train, l_rate, n_epoch):
 			for i in range(len(row)-1):
                                 # w = w + learning_rate * (expected - predicted) * x
 				weights[i + 1] = weights[i + 1] + l_rate * error * row[i]
-                accuracy.append(get_prediction_accuracy(train, weights))
+                accuracy.append(get_prediction_accuracy(fold_test, weights))
         accuracies.append(accuracy)
 	return weights
 
 # Estimate Perceptron weights using batch gradient descent
-def train_weights_bgd(train, l_rate, n_epoch):
+def train_weights_bgd(train, fold_test, l_rate, n_epoch):
         accuracy=[]
 	weights = [0.0 for i in range(len(train[0]))]
         weights_update = [0.0 for i in range(len(train[0]))]
@@ -123,23 +124,23 @@ def train_weights_bgd(train, l_rate, n_epoch):
                 # update the weights in a batch at the end of the epoch
 		for i in range(len(weights)):
 			weights[i] = weights[i] + (weights_update[i]/n_epoch)
-                accuracy.append(get_prediction_accuracy(train, weights))
+                accuracy.append(get_prediction_accuracy(fold_test, weights))
         accuracies.append(accuracy)
 	return weights
 
 # Perceptron Algorithm With Stochastic Gradient Descent
-def perceptron_sgd(train, test, l_rate, n_epoch):
+def perceptron_sgd(train, test, fold_test, l_rate, n_epoch):
 	predictions = list()
-	weights = train_weights_sgd(train, l_rate, n_epoch)
+	weights = train_weights_sgd(train, fold_test, l_rate, n_epoch)
 	for row in test:
 		prediction = predict(row, weights)
 		predictions.append(prediction)
 	return(predictions)
 
 # Perceptron Algorithm With Batch Gradient Descent
-def perceptron_bgd(train, test, l_rate, n_epoch):
+def perceptron_bgd(train, test, fold_test, l_rate, n_epoch):
 	predictions = list()
-        weights = train_weights_bgd(train, l_rate, n_epoch)
+        weights = train_weights_bgd(train, fold_test, l_rate, n_epoch)
 	for row in test:
 		prediction = predict(row, weights)
 		predictions.append(prediction)
