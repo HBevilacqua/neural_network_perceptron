@@ -2,6 +2,7 @@
 from random import seed
 from random import randrange
 from csv import reader
+import matplotlib.pyplot as plt
 
 # Load a CSV file
 def load_csv(filename):
@@ -75,24 +76,70 @@ def predict(row, weights):
 	activation = weights[0]
 	for i in range(len(row)-1):
 		activation += weights[i + 1] * row[i]
+        # Heaviside step function
 	return 1.0 if activation >= 0.0 else 0.0
 
+def get_prediction_accuracy(train, weights):
+    predictions = list()
+    for row in train:
+        prediction = predict(row, weights)
+        predictions.append(prediction)
+    expected_out = [row[-1] for row in train]
+    accuracy = accuracy_metric(expected_out, predictions)
+    return accuracy
+
 # Estimate Perceptron weights using stochastic gradient descent
-def train_weights(train, l_rate, n_epoch):
+def train_weights_sgd(train, l_rate, n_epoch):
+        accuracy=[]
 	weights = [0.0 for i in range(len(train[0]))]
 	for epoch in range(n_epoch):
 		for row in train:
 			prediction = predict(row, weights)
 			error = row[-1] - prediction
+                        # w = w + learning_rate * (expected - predicted)
 			weights[0] = weights[0] + l_rate * error
 			for i in range(len(row)-1):
+                                # w = w + learning_rate * (expected - predicted) * x
 				weights[i + 1] = weights[i + 1] + l_rate * error * row[i]
+                accuracy.append(get_prediction_accuracy(train, weights))
+        accuracies.append(accuracy)
+	return weights
+
+# Estimate Perceptron weights using batch gradient descent
+def train_weights_bgd(train, l_rate, n_epoch):
+        accuracy=[]
+	weights = [0.0 for i in range(len(train[0]))]
+        weights_update = [0.0 for i in range(len(train[0]))]
+	for epoch in range(n_epoch):
+		sum_error = 0.0
+		for row in train:
+			prediction = predict(row, weights)
+			error = row[-1] - prediction
+			sum_error += error**2
+                        # accumulate updates across the epoch
+                        weights_update[0] += l_rate * error
+			for i in range(len(row)-1):
+				weights_update[i + 1] += l_rate * error * row[i]
+                # update the weights in a batch at the end of the epoch
+		for i in range(len(weights)):
+			weights[i] = weights[i] + (weights_update[i]/n_epoch)
+                accuracy.append(get_prediction_accuracy(train, weights))
+        accuracies.append(accuracy)
 	return weights
 
 # Perceptron Algorithm With Stochastic Gradient Descent
-def perceptron(train, test, l_rate, n_epoch):
+def perceptron_sgd(train, test, l_rate, n_epoch):
 	predictions = list()
-	weights = train_weights(train, l_rate, n_epoch)
+	weights = train_weights_sgd(train, l_rate, n_epoch)
+	for row in test:
+		prediction = predict(row, weights)
+		predictions.append(prediction)
+	return(predictions)
+
+# Perceptron Algorithm With Batch Gradient Descent
+def perceptron_bgd(train, test, l_rate, n_epoch):
+	predictions = list()
+        weights = train_weights_bgd(train, l_rate, n_epoch)
 	for row in test:
 		prediction = predict(row, weights)
 		predictions.append(prediction)
@@ -100,6 +147,8 @@ def perceptron(train, test, l_rate, n_epoch):
 
 # Test the Perceptron algorithm on the sonar dataset
 seed(1)
+accuracies_sgd = list()
+accuracies_bgd = list()
 # load and prepare data
 filename = 'sonar.all-data.csv'
 dataset = load_csv(filename)
@@ -111,6 +160,21 @@ str_column_to_int(dataset, len(dataset[0])-1)
 n_folds = 3
 l_rate = 0.01
 n_epoch = 500
-scores = evaluate_algorithm(dataset, perceptron, n_folds, l_rate, n_epoch)
-print('Scores: %s' % scores)
+accuracies = list()
+scores = evaluate_algorithm(dataset, perceptron_sgd, n_folds, l_rate, n_epoch)
+print('Scores SGD: %s' % scores)
 print('Mean Accuracy: %.3f%%' % (sum(scores)/float(len(scores))))
+scores = evaluate_algorithm(dataset, perceptron_bgd, n_folds, l_rate, n_epoch)
+print('Scores BGD: %s' % scores)
+print('Mean Accuracy: %.3f%%' % (sum(scores)/float(len(scores))))
+subplot = 200 + n_folds*10 + 1
+for i in range(len(accuracies)):
+    plt.subplot(subplot+i)
+    plt.plot(accuracies[i])
+    plt.grid(True)
+    if(i < n_folds):
+        plt.ylabel('Accuracy SGD %d' % i)
+    else:
+        plt.ylabel('Accuracy BGD %d' % (i-n_folds))
+    plt.xlabel('epoch number')
+plt.show()
