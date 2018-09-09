@@ -25,14 +25,11 @@ The gradient (∇f) of a scalar-valued multivariable function f(x,y,…) gathers
 #### Gardient descent 
 It is a first order optmization algorithm to fing the minimum of a function, generally used in ML when it is not possible to find the solutions of the equation ∂J(θ)/∂θ = 0, I mean all θ that min J(θ).
 
-#### Regression
-Regression tries to predict outputs of a function according to its inputs (= find the relationship between Y and X).
-
-#### Linear regression
-Linear regression is a linear model, e.g. a model that assumes a linear relationship between the input variables (x) and the single output variable (y).
-
 #### Training a network
 Updates weights in a neural network to improve its predictions according to a dataset.
+
+#### Classification (in ML)
+Classification aims to predict a label. The outputs are class labels.
 
 #### Dataset
 Data used to train and test the network.
